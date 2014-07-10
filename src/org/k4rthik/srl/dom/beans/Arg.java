@@ -1,4 +1,4 @@
-package org.k4rthik.srl.xml.dom;
+package org.k4rthik.srl.dom.beans;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlValue;

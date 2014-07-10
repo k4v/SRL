@@ -1,7 +1,7 @@
 package org.k4rthik.srl.main;
 
-import org.k4rthik.srl.xml.SketchXMLReader;
-import org.k4rthik.srl.xml.dom.Sketch;
+import org.k4rthik.srl.dom.SketchXMLReader;
+import org.k4rthik.srl.dom.beans.Sketch;
 
 import java.io.File;
 import java.io.IOException;

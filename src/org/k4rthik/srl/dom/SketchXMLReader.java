@@ -1,6 +1,6 @@
-package org.k4rthik.srl.xml;
+package org.k4rthik.srl.dom;
 
-import org.k4rthik.srl.xml.dom.Sketch;
+import org.k4rthik.srl.dom.beans.Sketch;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
