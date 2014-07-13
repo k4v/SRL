@@ -1,10 +1,12 @@
 package org.k4rthik.srl.main;
 
-import org.k4rthik.srl.dom.ImageHandler;
 import org.k4rthik.srl.dom.SketchXMLReader;
 import org.k4rthik.srl.dom.beans.Sketch;
+import org.k4rthik.srl.gui.ImageHandler;
+import org.k4rthik.srl.gui.SketchCanvas;
 
 import javax.imageio.ImageIO;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
@@ -12,8 +14,8 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -60,31 +62,32 @@ public class Labeller
                 // Read sub dir
                 DirectoryStream<Path> charDirStream = Files.newDirectoryStream(charDir);
                 // Map of <Label, count>
-                Map<String, Integer> labelMap = new HashMap<String, Integer>();
-                String majLabel = null;
+                List<Image> imageList = new ArrayList<Image>();
                 for (Path charFile : charDirStream)
                 {
                     // Read XML files from the directory
                     if(charFile.toString().endsWith(".xml"))
                     {
-                        String imageLabel = drawAndLabelXml(charFile, xmlReader);
+                        Image drawnImage= drawImageForXml(charFile, xmlReader);
                         // Add label with count to map
-                        labelMap.put(imageLabel,
-                                (labelMap.get(imageLabel) == null) ? 1 : 1+labelMap.get(imageLabel));
-                        // Update majLabel if new count is greater
-                        majLabel = ((majLabel == null) || (labelMap.get(imageLabel) > labelMap.get(majLabel))) ?
-                                imageLabel : majLabel;
+                        imageList.add(drawnImage);
                         filesLoaded++;
                     }
                 }
+                System.out.println(filesLoaded+" files read\n");
+
                 // Write majority label to folder
-                if(majLabel != null)
+                if(filesLoaded > 0)
                 {
+                    // Draw all images on a canvas
+                    new SketchCanvas(imageList).createAndShowUI();
+                    // Get label for image from user
+                    System.out.print("Enter label for: " + charDir.toString() + ": ");
+                    String dirLabel = new Scanner(System.in).nextLine();
                     FileWriter fileWriter = new FileWriter(charDir.toString() + "/" + "label");
-                    fileWriter.write(majLabel);
+                    fileWriter.write(dirLabel);
                     fileWriter.close();
                 }
-                System.out.println(filesLoaded+" files read\n");
             }
         } catch (IOException e)
         {
@@ -92,7 +95,7 @@ public class Labeller
         }
     }
 
-    private String drawAndLabelXml(Path charFile, SketchXMLReader xmlReader) throws IOException
+    private Image drawImageForXml(Path charFile, SketchXMLReader xmlReader) throws IOException
     {
         // Load XML file into Sketch object
         System.out.println("Reading file: " + charFile.toString());
@@ -101,8 +104,6 @@ public class Labeller
         // Draw image from points in sketch
         BufferedImage drawImage = ImageHandler.drawImage(xmlSketch);
         ImageIO.write(drawImage, "png", new File(charFile+".png"));
-        // Get label for image from user
-        System.out.print("Enter label for " + charFile + ": ");
-        return new Scanner(System.in).nextLine();
+        return drawImage;
     }
 }

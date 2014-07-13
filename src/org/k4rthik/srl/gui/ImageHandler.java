@@ -1,4 +1,4 @@
-package org.k4rthik.srl.dom;
+package org.k4rthik.srl.gui;
 
 import org.k4rthik.srl.dom.beans.Point;
 import org.k4rthik.srl.dom.beans.Sketch;
@@ -26,8 +26,6 @@ public class ImageHandler
             maxY = maxY < charPoint.getY() ? charPoint.getY() : maxY;
             minY = ((minY < 0) || (minY > charPoint.getY())) ? charPoint.getY() : minY;
         }
-
-        System.out.println("Dims: "+minX+","+maxX+","+minY+","+maxY);
 
         int paddingSize = 5;
         BufferedImage drawImage = new BufferedImage((2 * paddingSize) + (int)(maxX - minX),
