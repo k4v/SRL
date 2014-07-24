@@ -29,14 +29,13 @@ public class ImageHandler
             minY = ((minY < 0) || (minY > charPoint.getY())) ? charPoint.getY() : minY;
         }
 
-        int paddingSize = 5;
-        BufferedImage drawImage = new BufferedImage((2 * paddingSize) + (int)(maxX - minX),
-                                                    (2 * paddingSize) + (int)(maxY - minY),
+        BufferedImage drawImage = new BufferedImage((int)(maxX - minX),
+                                                    (int)(maxY - minY),
                                                     BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = drawImage.createGraphics();
 
         graphics.setPaint(new Color(255, 255, 255));
-        graphics.fillRect(0, 0, drawImage.getWidth(), drawImage.getHeight());
+        graphics.fillRect(0, 0, (int)(maxX - minX), (int)(maxY - minY));
 
         // Set drawing color to black
         graphics.setColor(new Color(255 << 24));
@@ -53,10 +52,11 @@ public class ImageHandler
                     Point pointA = fromSketch.getPointById(args.get(i)  .getValue());
                     Point pointB = fromSketch.getPointById(args.get(i+1).getValue());
 
-                    graphics.drawLine((int)(paddingSize + pointA.getX() - minX),
-                                    (int)(paddingSize + pointA.getY() - minY),
-                                    (int)(paddingSize + pointB.getX() - minX),
-                                    (int)(paddingSize + pointB.getY() - minY));
+                    graphics.drawLine(
+                                    (int)(pointA.getX() - minX),
+                                    (int)(pointA.getY() - minY),
+                                    (int)(pointB.getX() - minX),
+                                    (int)(pointB.getY() - minY));
                 }
             }
         }

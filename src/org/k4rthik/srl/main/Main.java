@@ -13,6 +13,6 @@ public class Main
     {
         String baseFolder = args[0];
         Path baseDir = FileSystems.getDefault().getPath(baseFolder);
-        Labeller.getInstance().labelXmls(baseDir, true);
+        GrandMaster.getInstance().processTrainingSet(baseDir, false);
     }
 }

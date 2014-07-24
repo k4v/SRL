@@ -58,9 +58,6 @@ class ImagePanel extends JPanel
         canvasDimension = new Dimension(
                 imageDimensions.width*Math.min(imagesPerRow, imageList.size()) + 20,
                 imageDimensions.height*(1+((imageList.size() - 1)/imagesPerRow)) + 40);
-
-        System.out.println("IMG: "+imageDimensions.toString());
-        System.out.println("CNV: "+canvasDimension.toString());
     }
 
     @Override

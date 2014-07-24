@@ -15,6 +15,10 @@ import java.util.Map;
 @XmlRootElement(name = "sketch")
 public class Sketch
 {
+    // Name of the XML file frp, which this object was parsed.
+    // Set manually after unmarshalling
+    private String fileName;
+
     private String id;
     private String type;
 
@@ -84,6 +88,16 @@ public class Sketch
     public Stroke getStrokeById(String id)
     {
         return strokeMap.get(id);
+    }
+
+    public String getFileName()
+    {
+        return this.fileName;
+    }
+
+    public void setFileName(String fileName)
+    {
+        this.fileName = fileName;
     }
 
     @Override
