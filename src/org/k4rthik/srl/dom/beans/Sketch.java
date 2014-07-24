@@ -4,6 +4,8 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Author: Karthik
@@ -17,7 +19,10 @@ public class Sketch
     private String type;
 
     private ArrayList<Point> points;
+    private Map<String, Point> pointMap = new HashMap<String, Point>();
+
     private ArrayList<Stroke> strokes;
+    private Map<String, Stroke> strokeMap = new HashMap<String, Stroke>();
 
     public String getId()
     {
@@ -50,6 +55,10 @@ public class Sketch
     public void setPoints(ArrayList<Point> points)
     {
         this.points = points;
+        for(Point point : points)
+        {
+            pointMap.put(point.getId(), point);
+        }
     }
 
     public ArrayList<Stroke> getStrokes()
@@ -61,6 +70,20 @@ public class Sketch
     public void setStrokes(ArrayList<Stroke> strokes)
     {
         this.strokes = strokes;
+        for(Stroke stroke : strokes)
+        {
+            strokeMap.put(stroke.getId(), stroke);
+        }
+    }
+
+    public Point getPointById(String id)
+    {
+        return pointMap.get(id);
+    }
+
+    public Stroke getStrokeById(String id)
+    {
+        return strokeMap.get(id);
     }
 
     @Override
@@ -85,7 +108,7 @@ public class Sketch
             for (Stroke stroke : strokes)
             {
                 sketchBuilder.append("\t<stroke id=\"").append(stroke.getId())
-                        .append("\" visible=\"").append(stroke.getVisible()).append("\">\n");
+                        .append("\" visible=\"").append(stroke.isVisible()).append("\">\n");
 
                 for (Arg arg : stroke.getArgs())
                 {

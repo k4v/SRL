@@ -26,7 +26,7 @@ public class Stroke
         this.id = id;
     }
 
-    public boolean getVisible()
+    public boolean isVisible()
     {
         return visible;
     }

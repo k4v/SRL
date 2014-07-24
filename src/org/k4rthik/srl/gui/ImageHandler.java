@@ -1,7 +1,9 @@
 package org.k4rthik.srl.gui;
 
+import org.k4rthik.srl.dom.beans.Arg;
 import org.k4rthik.srl.dom.beans.Point;
 import org.k4rthik.srl.dom.beans.Sketch;
+import org.k4rthik.srl.dom.beans.Stroke;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -35,12 +37,28 @@ public class ImageHandler
 
         graphics.setPaint(new Color(255, 255, 255));
         graphics.fillRect(0, 0, drawImage.getWidth(), drawImage.getHeight());
-        int blackColor = (255 << 24);
-        for (Point charPoint : pointList)
+
+        // Set drawing color to black
+        graphics.setColor(new Color(255 << 24));
+
+        // Draw character image from stroke information
+        List<Stroke> strokeList = fromSketch.getStrokes();
+        for (Stroke stroke : strokeList)
         {
-            drawImage.setRGB((int)(paddingSize + charPoint.getX() - minX),
-                    (int)(paddingSize + charPoint.getY() - minY),
-                    blackColor);
+            if(stroke.isVisible() && (stroke.getArgs() != null))
+            {
+                List<Arg> args = stroke.getArgs();
+                for(int i=0; i<args.size()-1; i++)
+                {
+                    Point pointA = fromSketch.getPointById(args.get(i)  .getValue());
+                    Point pointB = fromSketch.getPointById(args.get(i+1).getValue());
+
+                    graphics.drawLine((int)(paddingSize + pointA.getX() - minX),
+                                    (int)(paddingSize + pointA.getY() - minY),
+                                    (int)(paddingSize + pointB.getX() - minX),
+                                    (int)(paddingSize + pointB.getY() - minY));
+                }
+            }
         }
         return drawImage;
     }
