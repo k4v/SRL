@@ -3,6 +3,7 @@ package org.k4rthik.srl.main;
 import org.k4rthik.srl.dom.SketchXMLReader;
 import org.k4rthik.srl.dom.beans.Sketch;
 import org.k4rthik.srl.features.CosineTransformFeature;
+import org.k4rthik.srl.features.DarkLevelZoningFeature;
 import org.k4rthik.srl.features.IFeature;
 import org.k4rthik.srl.gui.ImageHandler;
 import org.k4rthik.srl.gui.SketchCanvas;
@@ -61,13 +62,32 @@ public class GrandMaster
         // Label all images in the given path
         labelXmls(baseDir, forceRelabel);
 
+        List<Class> featureClasses = new ArrayList<Class>();
+        featureClasses.add(CosineTransformFeature.class);
+        featureClasses.add(DarkLevelZoningFeature.class);
 
         // Extract features from the images we found
         for(Map.Entry<Image, Sketch> mapEntry : GRAND_MAP.entrySet())
         {
-            // 1. Cosine transform
-            IFeature featureExtractor = new CosineTransformFeature();
-            featureExtractor.extractFeature((BufferedImage)mapEntry.getKey(), mapEntry.getValue());
+            for(Class featureClass : featureClasses)
+            {
+                try
+                {
+                    IFeature featureExtractor = (IFeature)featureClass.newInstance();
+                    featureExtractor.computeFeature((BufferedImage) mapEntry.getKey(), mapEntry.getValue());
+                }
+                catch (ReflectiveOperationException e)
+                {
+                    System.err.println("Error creating instance of feature extractor "+featureClass.getName());
+                }
+                catch (Exception e)
+                {
+                    System.err.println("Error extracting features using "+featureClass.getName());
+                    e.printStackTrace(System.err);
+                }
+            }
+
+            System.exit(0);
         }
     }
 

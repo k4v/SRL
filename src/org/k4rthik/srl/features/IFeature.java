@@ -11,5 +11,5 @@ import java.awt.image.BufferedImage;
  */
 public interface IFeature
 {
-    public void extractFeature(@Nullable BufferedImage sketchImage, @Nullable Sketch parsedSketch);
+    public void computeFeature(@Nullable BufferedImage sketchImage, @Nullable Sketch parsedSketch);
 }

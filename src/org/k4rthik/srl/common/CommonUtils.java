@@ -6,7 +6,9 @@ import java.awt.image.BufferedImage;
  * Author: Karthik
  * Date  : 7/23/2014.
  */
-public class ImageUtils
+
+@SuppressWarnings("unused")
+public class CommonUtils
 {
     public static int[][] getBinaryArray_BinaryImage(BufferedImage bufferedImage)
     {
@@ -19,7 +21,7 @@ public class ImageUtils
 
             for (int x = 0; x < bufferedImage.getWidth(); x++)
             {
-                pixelArr[y][x] = (int) (bufferedImage.getRGB(x, y) == 0xFFFFFFFF ? 0 : 1);
+                pixelArr[y][x] = (bufferedImage.getRGB(x, y) == 0xFFFFFFFF ? 0 : 1);
             }
         }
 

@@ -1,7 +1,7 @@
 package org.k4rthik.srl.features;
 
 import com.sun.istack.internal.Nullable;
-import org.k4rthik.srl.common.ImageUtils;
+import org.k4rthik.srl.common.CommonUtils;
 import org.k4rthik.srl.dom.beans.Sketch;
 
 import java.awt.image.BufferedImage;
@@ -13,17 +13,20 @@ import java.util.Arrays;
  */
 public class CosineTransformFeature implements IFeature
 {
+    // Feature matrix
+    double[][] cosineTransform = null;
+
     @Override
-    public void extractFeature(@Nullable BufferedImage sketchImage, @Nullable Sketch parsedSketch)
+    public void computeFeature(@Nullable BufferedImage sketchImage, @Nullable Sketch parsedSketch)
     {
         System.out.println("Extracting features from "+parsedSketch.getFileName());
 
-        int[][] pixelArr = ImageUtils.getBinaryArray_BinaryImage(sketchImage);
-        ImageUtils.print2DArray(pixelArr);
+        int[][] pixelArr = CommonUtils.getBinaryArray_BinaryImage(sketchImage);
+        CommonUtils.print2DArray(pixelArr);
 
         System.out.println('\n');
 
-        double[][] cosineTransform = new double[pixelArr.length][];
+        cosineTransform = new double[pixelArr.length][];
         // Compute cosine tranform for each element in intial matrix
         for(int v=0; v<sketchImage.getHeight(); v++)
         {
@@ -50,8 +53,7 @@ public class CosineTransformFeature implements IFeature
             }
         }
 
-        ImageUtils.print2DArray(cosineTransform);
-        System.exit(0);
+        CommonUtils.print2DArray(cosineTransform);
     }
 
     private double getBasis(int w)
