@@ -2,6 +2,7 @@ package org.k4rthik.srl.main;
 
 import org.k4rthik.srl.dom.SketchXMLReader;
 import org.k4rthik.srl.dom.beans.Sketch;
+import org.k4rthik.srl.features.AngleCountZoningFeature;
 import org.k4rthik.srl.features.CosineTransformFeature;
 import org.k4rthik.srl.features.DarkLevelZoningFeature;
 import org.k4rthik.srl.features.IFeature;
@@ -65,6 +66,7 @@ public class GrandMaster
         List<Class> featureClasses = new ArrayList<Class>();
         featureClasses.add(CosineTransformFeature.class);
         featureClasses.add(DarkLevelZoningFeature.class);
+        featureClasses.add(AngleCountZoningFeature.class);
 
         // Extract features from the images we found
         for(Map.Entry<Image, Sketch> mapEntry : GRAND_MAP.entrySet())

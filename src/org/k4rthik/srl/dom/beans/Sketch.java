@@ -28,6 +28,8 @@ public class Sketch
     private ArrayList<Stroke> strokes;
     private Map<String, Stroke> strokeMap = new HashMap<String, Stroke>();
 
+    private float[] xyBounds = new float[4];
+
     public String getId()
     {
         return id;
@@ -63,6 +65,19 @@ public class Sketch
         {
             pointMap.put(point.getId(), point);
         }
+
+        float minX = -1f, maxX = 0f;
+        float minY = -1f, maxY = 0f;
+
+        for(Point point : points)
+        {
+            minX = ((minX < 0) || (minX > point.getX())) ? point.getX() : minX;
+            maxX = (maxX < point.getX()) ? point.getX() : maxX;
+            minY = ((minY < 0) || (minY > point.getY())) ? point.getY() : minY;
+            maxY = (maxY < point.getY()) ? point.getY() : maxY;
+        }
+
+        xyBounds = new float[]{minX, maxX, minY, maxY};
     }
 
     public ArrayList<Stroke> getStrokes()
@@ -98,6 +113,11 @@ public class Sketch
     public void setFileName(String fileName)
     {
         this.fileName = fileName;
+    }
+
+    public float[] getXYBounds()
+    {
+        return xyBounds;
     }
 
     @Override
