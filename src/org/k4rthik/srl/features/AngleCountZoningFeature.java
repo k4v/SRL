@@ -21,7 +21,7 @@ public class AngleCountZoningFeature implements IFeature
     Dimension gridSize = new Dimension(5, 5);
 
     // Feature matrix (angles: 0, 45, 90, 135)
-    int[][] angleCounts= null;
+    double[][] angleCounts= null;
 
     public AngleCountZoningFeature() { }
 
@@ -36,11 +36,11 @@ public class AngleCountZoningFeature implements IFeature
         System.out.println("Extracting Dark Level Zoning feature from " + parsedSketch.getFileName());
 
         // For each zone, store counts for each angle
-        angleCounts = new int[gridSize.width*gridSize.height][];
+        angleCounts = new double[gridSize.width*gridSize.height][];
         double errorInterval = Math.PI/8;
         for(int i=0; i<angleCounts.length; i++)
         {
-            angleCounts[i] = new int[(int)(Math.PI/errorInterval)/2];
+            angleCounts[i] = new double[(int)(Math.PI/errorInterval)/2];
             for(int j=0; j<angleCounts[i].length; j++)
                 angleCounts[i][j] = 0;
         }
@@ -52,6 +52,9 @@ public class AngleCountZoningFeature implements IFeature
 
         for(Stroke stroke : parsedSketch.getStrokes())
         {
+            if(stroke.getArgs() == null)
+                continue;
+
             ArrayList<Arg> argList = stroke.getArgs();
             for(int i=0; i<argList.size()-1; i++)
             {
@@ -86,6 +89,22 @@ public class AngleCountZoningFeature implements IFeature
                 angleCounts[zoneA][angleZone] += 1;
                 if(zoneA != zoneB)
                     angleCounts[zoneB][angleZone] += 1;
+            }
+        }
+
+        for(int i=0; i<angleCounts.length; i++)
+        {
+            int countSum = 0;
+            for(int j=0; j<angleCounts[i].length; j++)
+            {
+                countSum += angleCounts[i][j];
+            }
+            if(countSum != 0)
+            {
+                for (int j = 0; j < angleCounts[i].length; j++)
+                {
+                    angleCounts[i][j] /= countSum;
+                }
             }
         }
 
