@@ -34,8 +34,6 @@ public class DarkLevelZoningFeature implements IFeature
         int[][] bwImage = CommonUtils.getBinaryArray_BinaryImage(sketchImage);
         double[][] darkLevels = new double[gridSize.height][];
 
-        CommonUtils.print2DArray(bwImage);
-
         for(int y=0; y<gridSize.height; y++)
         {
             darkLevels[y] = new double[gridSize.width];
@@ -46,8 +44,6 @@ public class DarkLevelZoningFeature implements IFeature
                         (y*bwImage.length)/gridSize.height, (((1+y)*bwImage.length)/gridSize.height) - 1);
             }
         }
-
-        CommonUtils.print2DArray(darkLevels);
     }
 
     private double getDarkRatio(int[][] imagePixels, int startX, int endX, int startY, int endY)

@@ -32,7 +32,7 @@ public class CommonUtils
     {
         int[][] pixelMap = new int[bufferedImage.getHeight()][];
 
-        // Get 2D array from RGB iamge
+        // Get 2D array from RGB image
         for (int y = 0; y < bufferedImage.getHeight(null); y++)
         {
             pixelMap[y] = new int[bufferedImage.getWidth(null)];

@@ -1,7 +1,6 @@
 package org.k4rthik.srl.features;
 
 import com.sun.istack.internal.Nullable;
-import org.k4rthik.srl.common.CommonUtils;
 import org.k4rthik.srl.dom.beans.Arg;
 import org.k4rthik.srl.dom.beans.Point;
 import org.k4rthik.srl.dom.beans.Sketch;
@@ -107,7 +106,5 @@ public class AngleCountZoningFeature implements IFeature
                 }
             }
         }
-
-        CommonUtils.print2DArray(angleCounts);
     }
 }

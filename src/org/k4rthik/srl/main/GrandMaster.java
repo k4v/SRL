@@ -5,6 +5,7 @@ import org.k4rthik.srl.dom.beans.Sketch;
 import org.k4rthik.srl.features.AngleCountZoningFeature;
 import org.k4rthik.srl.features.CosineTransformFeature;
 import org.k4rthik.srl.features.DarkLevelZoningFeature;
+import org.k4rthik.srl.features.GeometricMomentsFeature;
 import org.k4rthik.srl.features.IFeature;
 import org.k4rthik.srl.gui.ImageHandler;
 import org.k4rthik.srl.gui.SketchCanvas;
@@ -65,6 +66,7 @@ public class GrandMaster
 
         List<Class> featureClasses = new ArrayList<Class>();
         featureClasses.add(CosineTransformFeature.class);
+        featureClasses.add(GeometricMomentsFeature.class);
         featureClasses.add(DarkLevelZoningFeature.class);
         featureClasses.add(AngleCountZoningFeature.class);
 
