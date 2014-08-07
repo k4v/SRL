@@ -7,7 +7,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Author: Karthik
@@ -16,7 +16,7 @@ import java.util.List;
 public class SketchCanvas extends JFrame
 {
     ImagePanel imagePanel;
-    public SketchCanvas(List<Image> imageList)
+    public SketchCanvas(Set<Image> imageList)
     {
         imagePanel = new ImagePanel(imageList);
     }
@@ -38,14 +38,14 @@ public class SketchCanvas extends JFrame
 
 class ImagePanel extends JPanel
 {
-    private List<Image> imageList;
+    private Set<Image> imageList;
 
     private Dimension imageDimensions = new Dimension(0, 0);
     private Dimension canvasDimension = new Dimension(0, 0);
 
     private final int imagesPerRow = 4;
 
-    public ImagePanel(List<Image> imageList)
+    public ImagePanel(Set<Image> imageList)
     {
         this.imageList = imageList;
         for (Image image : imageList)

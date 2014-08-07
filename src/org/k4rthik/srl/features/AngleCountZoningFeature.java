@@ -5,44 +5,63 @@ import org.k4rthik.srl.dom.beans.Arg;
 import org.k4rthik.srl.dom.beans.Point;
 import org.k4rthik.srl.dom.beans.Sketch;
 import org.k4rthik.srl.dom.beans.Stroke;
+import weka.core.Attribute;
+import weka.core.FastVector;
+import weka.core.Instance;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * Author: Karthik
  * Date  : 7/24/2014.
  */
 @SuppressWarnings("unused")
-public class AngleCountZoningFeature implements IFeature
+public class AngleCountZoningFeature extends IFeature
 {
     Dimension gridSize = new Dimension(5, 5);
 
     // Feature matrix (angles: 0, 45, 90, 135)
     double[][] angleCounts= null;
 
-    public AngleCountZoningFeature() { }
+    // 2*errorInterval is the snap value of the angles
+    double errorInterval = Math.PI/8;
+
+    public AngleCountZoningFeature()
+    {
+        ATTRIBUTE_NAME_PREFIX = "ZONE_ANGLE_";
+
+        // For each zone, store counts for each angle
+        angleCounts = new double[gridSize.height*gridSize.width][(int)(Math.PI/errorInterval)/2];
+        for(int i=0; i<angleCounts.length; i++)
+        {
+            for(int j=0; j<angleCounts[i].length; j++)
+                angleCounts[i][j] = 0;
+        }
+    }
 
     public AngleCountZoningFeature(Dimension gridSize)
     {
         this.gridSize = gridSize;
+
+        ATTRIBUTE_NAME_PREFIX = "ZONE_ANGLE_";
+
+        // For each zone, store counts for each angle
+        angleCounts = new double[gridSize.height*gridSize.width][(int)(Math.PI/errorInterval)/2];
+        for(int i=0; i<angleCounts.length; i++)
+        {
+            for(int j=0; j<angleCounts[i].length; j++)
+                angleCounts[i][j] = 0;
+        }
     }
 
     @Override
     public void computeFeature(@Nullable BufferedImage sketchImage, @Nullable Sketch parsedSketch)
     {
-        System.out.println("Extracting Dark Level Zoning feature from " + parsedSketch.getFileName());
+        System.out.println("Extracting Angle Count Zoning feature from " + parsedSketch.getFileName());
 
-        // For each zone, store counts for each angle
-        angleCounts = new double[gridSize.width*gridSize.height][];
-        double errorInterval = Math.PI/8;
-        for(int i=0; i<angleCounts.length; i++)
-        {
-            angleCounts[i] = new double[(int)(Math.PI/errorInterval)/2];
-            for(int j=0; j<angleCounts[i].length; j++)
-                angleCounts[i][j] = 0;
-        }
         // Height and width of each zone
         double zoneWidth = sketchImage.getWidth()/gridSize.getWidth();
         double zoneHeight= sketchImage.getHeight()/gridSize.getHeight();
@@ -104,6 +123,31 @@ public class AngleCountZoningFeature implements IFeature
                 {
                     angleCounts[i][j] /= countSum;
                 }
+            }
+        }
+    }
+
+    @Override
+    public void setAttributes(FastVector attributeList)
+    {
+        for(int i=0; i<angleCounts.length; i++)
+        {
+            for(int j=0;j<angleCounts[i].length; j++)
+            {
+                attributeList.addElement(new Attribute(ATTRIBUTE_NAME_PREFIX+i+"_"+j, attributeList.size()));
+            }
+        }
+    }
+
+    public void setAttributeValues(FastVector attributeList, Map<String, Integer> attributeNameMap, Instance thisInstance)
+    {
+        for(int i=0; i<angleCounts.length; i++)
+        {
+            for(int j=0; j<angleCounts[i].length; j++)
+            {
+                thisInstance.setValue(
+                        (Attribute)attributeList.elementAt(attributeNameMap.get(ATTRIBUTE_NAME_PREFIX+i+"_"+j)),
+                        angleCounts[i][j]);
             }
         }
     }

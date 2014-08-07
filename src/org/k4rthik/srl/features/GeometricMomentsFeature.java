@@ -3,8 +3,12 @@ package org.k4rthik.srl.features;
 import com.sun.istack.internal.Nullable;
 import org.k4rthik.srl.common.CommonUtils;
 import org.k4rthik.srl.dom.beans.Sketch;
+import weka.core.Attribute;
+import weka.core.FastVector;
+import weka.core.Instance;
 
 import java.awt.image.BufferedImage;
+import java.util.Map;
 
 /**
  * Author: Karthik
@@ -12,18 +16,26 @@ import java.awt.image.BufferedImage;
  */
 
 @SuppressWarnings("unused")
-public class GeometricMomentsFeature implements IFeature
+public class GeometricMomentsFeature extends IFeature
 {
     int[][] pixelMatrix;
 
     // General transform invariant moment feature
     double I1, I2, I3, I4;
     double u_00;
-    double[] momentFeature = new double[4];
+    double[] momentFeature = null;
+
+    public GeometricMomentsFeature()
+    {
+        ATTRIBUTE_NAME_PREFIX = "GEOMETRIC_MOMENT_PSI_";
+        momentFeature = new double[4];
+    }
 
     @Override
     public void computeFeature(@Nullable BufferedImage sketchImage, @Nullable Sketch parsedSketch)
     {
+        System.out.println("Extracting Geometrix Moments feature from "+parsedSketch.getFileName());
+
         this.pixelMatrix = CommonUtils.getBinaryArray_BinaryImage(sketchImage);
 
         u_00 = u_pq(0, 0);
@@ -100,5 +112,25 @@ public class GeometricMomentsFeature implements IFeature
         double vPQ = 0;
 
         return u_pq(pOrder, qOrder)/Math.pow(u_00, 1+((pOrder+qOrder)/2));
+    }
+
+    @Override
+    public void setAttributes(FastVector attributeList)
+    {
+        for(int i=0; i<momentFeature.length; i++)
+        {
+            attributeList.addElement(new Attribute(ATTRIBUTE_NAME_PREFIX+i, attributeList.size()));
+        }
+    }
+
+    @Override
+    public void setAttributeValues(FastVector attributeList, Map<String, Integer> attributeNameMap, Instance thisInstance)
+    {
+        for(int i=0; i<momentFeature.length; i++)
+        {
+            thisInstance.setValue(
+                    (Attribute)attributeList.elementAt(attributeNameMap.get(ATTRIBUTE_NAME_PREFIX+i)),
+                    momentFeature[i]);
+        }
     }
 }

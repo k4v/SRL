@@ -3,16 +3,20 @@ package org.k4rthik.srl.features;
 import com.sun.istack.internal.Nullable;
 import org.k4rthik.srl.common.CommonUtils;
 import org.k4rthik.srl.dom.beans.Sketch;
+import weka.core.Attribute;
+import weka.core.FastVector;
+import weka.core.Instance;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Author: Karthik
  * Date  : 7/23/2014.
  */
-public class CosineTransformFeature implements IFeature
+public class CosineTransformFeature  extends IFeature
 {
     // Feature matrix
     double[][] cosineTransform = null;
@@ -22,15 +26,25 @@ public class CosineTransformFeature implements IFeature
     // cosine transforms.
     Dimension gridDimensions = new Dimension(100, 100);
 
+    public CosineTransformFeature()
+    {
+        ATTRIBUTE_NAME_PREFIX = "COS_TRANSFORM_";
+
+        cosineTransform = new double[gridDimensions.height][gridDimensions.width];
+        for(int i=0; i<gridDimensions.getHeight(); i++)
+        {
+            Arrays.fill(cosineTransform[i], 0);
+        }
+    }
+
     @Override
     public void computeFeature(@Nullable BufferedImage sketchImage, @Nullable Sketch parsedSketch)
     {
-        System.out.println("Extracting features from "+parsedSketch.getFileName());
+        System.out.println("Extracting Cosine Transform features from "+parsedSketch.getFileName());
 
         // Resize the image and save to pixel array
         int[][] pixelArr = fitToGrid(CommonUtils.getBinaryArray_BinaryImage(sketchImage));
 
-        cosineTransform = new double[pixelArr.length][];
         // Compute cosine tranform for each element in image matrix
         for(int v=0; v<pixelArr.length; v++)
         {
@@ -40,9 +54,6 @@ public class CosineTransformFeature implements IFeature
             // pixelArr[v].length
 
             // Fill cosine transform matrix with 0 values
-            cosineTransform[v] = new double[pixelArr[v].length];
-            Arrays.fill(cosineTransform[v], 0);
-
             for(int u=0; u<pixelArr.length; u++)
             {
                 for(int x=0; x<pixelArr.length; x++)
@@ -103,5 +114,31 @@ public class CosineTransformFeature implements IFeature
         }
 
         return fitGrid;
+    }
+
+    @Override
+    public void setAttributes(FastVector attributeList)
+    {
+        for(int i=0; i<cosineTransform.length; i++)
+        {
+            for(int j=0; j<cosineTransform[i].length; j++)
+            {
+                attributeList.addElement(new Attribute(ATTRIBUTE_NAME_PREFIX+i+"_"+j, attributeList.size()));
+            }
+        }
+    }
+
+    @Override
+    public void setAttributeValues(FastVector attributeList, Map<String, Integer> attributeNameMap, Instance thisInstance)
+    {
+        for(int i=0; i<gridDimensions.height; i++)
+        {
+            for(int j=0; j<gridDimensions.width; j++)
+            {
+                thisInstance.setValue(
+                        (Attribute)attributeList.elementAt(attributeNameMap.get(ATTRIBUTE_NAME_PREFIX+i+"_"+j)),
+                        cosineTransform[i][j]);
+            }
+        }
     }
 }
