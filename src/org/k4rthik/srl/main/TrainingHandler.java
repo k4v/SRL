@@ -10,11 +10,14 @@ import org.k4rthik.srl.features.GeometricMomentsFeature;
 import org.k4rthik.srl.features.IFeature;
 import org.k4rthik.srl.gui.ImageHandler;
 import org.k4rthik.srl.gui.SketchCanvas;
+import org.k4rthik.srl.weka.IClassifier;
+import weka.classifiers.Evaluation;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ArffSaver;
+import weka.core.converters.ConverterUtils.DataSource;
 
 import javax.imageio.ImageIO;
 import java.awt.Image;
@@ -39,9 +42,11 @@ import java.util.Scanner;
  * Author: Karthik
  * Date  : 7/10/2014.
  */
-public class GrandMaster
+public class TrainingHandler
 {
-    private static GrandMaster INSTANCE = null;
+    private static TrainingHandler INSTANCE = null;
+
+    private boolean doFeatureExtract = true;
 
     // Feature Extraction classes
     List<Class> featureExtractionClasses = new ArrayList<Class>(Arrays.asList(
@@ -56,16 +61,16 @@ public class GrandMaster
     Instances trainingSet = null;
 
     // Get singletone instance of Labeller
-    public static synchronized GrandMaster getInstance() throws Exception
+    public static synchronized TrainingHandler getInstance() throws Exception
     {
         if(INSTANCE == null)
-            INSTANCE = new GrandMaster();
+            INSTANCE = new TrainingHandler();
         // Return singleton instance
         return INSTANCE;
     }
 
     // Private constructor for Labeller to make singleton class
-    private GrandMaster() throws Exception
+    private TrainingHandler() throws Exception
     {
         // Add attributes corresponding to each feature extraction class
         for(Class featureClass : featureExtractionClasses)
@@ -92,12 +97,25 @@ public class GrandMaster
         }
 
         // Create new set of training instances of variable capacity
-       trainingSet = new Instances("SRL", attributeList, 100);
+        trainingSet = new Instances("SRL", attributeList, 100);
         // Set class attribute as last attribute in list
         trainingSet.setClassIndex(attributeList.size() - 1);
     }
 
+    public void setDoFeatureExtract(boolean doFeatureExtract)
+    {
+        this.doFeatureExtract = doFeatureExtract;
+    }
 
+    public Instances loadArffDataset(String arffLocation) throws Exception
+    {
+        return new DataSource(arffLocation).getDataSet();
+    }
+
+    public void loadTrainingInstances(String arffLocation) throws Exception
+    {
+        this.trainingSet = loadArffDataset(arffLocation);
+    }
 
     /**
      * There's a reason this class is the GrandMaster:
@@ -108,15 +126,10 @@ public class GrandMaster
      */
     public void processTrainingSet(Path baseDir, boolean forceRelabel)
     {
-        // Label all images in the given path
-        labelXmls(baseDir, forceRelabel);
-    }
+        // For each sketch XML in base directory, get label as training data.
+        // forceRelabel forces the application to relabel all sketch folders,
+        // even if label already exists.
 
-    // For each sketch XML in base directory, get label as training data.
-    // forceRelabel forces the application to relabel all sketch folders,
-    // even if label already exists.
-    private void labelXmls(Path baseDir, boolean forceRelabel)
-    {
         // Loads XML (text) file and computes points
         SketchXMLReader xmlReader = new SketchXMLReader();
 
@@ -168,16 +181,37 @@ public class GrandMaster
                     }
 
                     // Compute features and add instance to training set
-                    addTrainingInstances(imageMap, selectLabel);
+                    if(doFeatureExtract)
+                    {
+                        extractFeaturesForInstances(imageMap, selectLabel);
+                    }
                 }
             }
         } catch (IOException e)
         {
             System.err.println("Error reading files in base directory: "+e.toString());
         }
+
+
+        if(doFeatureExtract)
+        {
+            // Save training set to ARFF file
+            System.out.println("Saving training dataset to ARFF file");
+            try
+            {
+                ArffSaver arffSaver = new ArffSaver();
+                arffSaver.setInstances(trainingSet);
+                String TRAINING_SET_SAVEFILE = "training.srl.arff";
+                arffSaver.setFile(new File(TRAINING_SET_SAVEFILE));
+                arffSaver.writeBatch();
+            } catch (Exception e)
+            {
+                System.err.println("Error writing training set to file: " + e.getMessage());
+            }
+        }
     }
 
-    private void addTrainingInstances(Map<Image, Sketch> imageMap, String imageLabel)
+    private void extractFeaturesForInstances(Map<Image, Sketch> imageMap, String imageLabel)
     {
         for(Map.Entry<Image, Sketch> imageEntry : imageMap.entrySet())
         {
@@ -201,18 +235,6 @@ public class GrandMaster
             trainingInstance.setClassValue(imageLabel);
             trainingSet.add(trainingInstance);
         }
-
-        try
-        {
-            ArffSaver arffSaver = new ArffSaver();
-            arffSaver.setInstances(trainingSet);
-            arffSaver.setFile(new File("training." + imageLabel + ".arff"));
-            arffSaver.writeBatch();
-        }
-        catch(Exception e)
-        {
-            System.err.println("Error writing training set to file for '"+imageLabel+"': "+e.getMessage());
-        }
     }
 
     private Pair<Image, Sketch> drawImageForXml(Path charFile, SketchXMLReader xmlReader) throws IOException
@@ -228,5 +250,16 @@ public class GrandMaster
 
         // Add image to grand map for feature extraction later
         return new Pair<Image, Sketch>(drawImage, xmlSketch);
+    }
+
+    // Run classifier on the given test and training datasets
+    public void runClassifier(IClassifier classifierInstance, String testArffLocation) throws Exception
+    {
+        Instances testInstances = loadArffDataset(testArffLocation);
+        testInstances.setClassIndex(testInstances.numAttributes() - 1);
+        classifierInstance.setTrainingSet(this.trainingSet);
+        Evaluation evalModel = classifierInstance.evaluateModel(testInstances);
+
+        System.out.println(evalModel.toSummaryString("\n\nRESULTS:\n\n", false));
     }
 }

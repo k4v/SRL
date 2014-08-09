@@ -70,7 +70,7 @@ public class DarkLevelZoningFeature  extends IFeature
             }
         }
 
-        return ((double)blackCount)/whiteCount;
+        return ((double)blackCount)/(blackCount + whiteCount);
     }
 
     @Override

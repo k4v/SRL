@@ -11,8 +11,18 @@ public class Main
 {
     public static void main(String[] args) throws Exception
     {
-        String baseFolder = args[0];
-        Path baseDir = FileSystems.getDefault().getPath(baseFolder);
-        GrandMaster.getInstance().processTrainingSet(baseDir, false);
+        if(args != null)
+        {
+            TrainingHandler trainingHandler = TrainingHandler.getInstance();
+
+            for(String baseFolder : args)
+            {
+                System.out.println("Training from "+baseFolder);
+                Path baseDir = FileSystems.getDefault().getPath(baseFolder);
+                trainingHandler.processTrainingSet(baseDir, false);
+            }
+
+            System.out.println("Training complete with "+args.length+" datasets");
+        }
     }
 }

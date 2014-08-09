@@ -22,12 +22,15 @@ public class ImageHandler
     {
         List<Point> pointList = fromSketch.getPoints();
         float maxX = 0f, minX = -1.0f, maxY = 0f, minY = -1.0f;
-        for (Point charPoint : pointList)
+        if(pointList != null)
         {
-            maxX = maxX < charPoint.getX() ? charPoint.getX() : maxX;
-            minX = ((minX < 0) || (minX > charPoint.getX())) ? charPoint.getX() : minX;
-            maxY = maxY < charPoint.getY() ? charPoint.getY() : maxY;
-            minY = ((minY < 0) || (minY > charPoint.getY())) ? charPoint.getY() : minY;
+            for (Point charPoint : pointList)
+            {
+                maxX = maxX < charPoint.getX() ? charPoint.getX() : maxX;
+                minX = ((minX < 0) || (minX > charPoint.getX())) ? charPoint.getX() : minX;
+                maxY = maxY < charPoint.getY() ? charPoint.getY() : maxY;
+                minY = ((minY < 0) || (minY > charPoint.getY())) ? charPoint.getY() : minY;
+            }
         }
 
         BufferedImage drawImage = new BufferedImage((int)(maxX - minX),
@@ -43,21 +46,24 @@ public class ImageHandler
 
         // Draw character image from stroke information
         List<Stroke> strokeList = fromSketch.getStrokes();
-        for (Stroke stroke : strokeList)
+        if(strokeList != null)
         {
-            if(stroke.isVisible() && (stroke.getArgs() != null))
+            for (Stroke stroke : strokeList)
             {
-                List<Arg> args = stroke.getArgs();
-                for(int i=0; i<args.size()-1; i++)
+                if (stroke.isVisible() && (stroke.getArgs() != null))
                 {
-                    Point pointA = fromSketch.getPointById(args.get(i)  .getValue());
-                    Point pointB = fromSketch.getPointById(args.get(i+1).getValue());
+                    List<Arg> args = stroke.getArgs();
+                    for (int i = 0; i < args.size() - 1; i++)
+                    {
+                        Point pointA = fromSketch.getPointById(args.get(i).getValue());
+                        Point pointB = fromSketch.getPointById(args.get(i + 1).getValue());
 
-                    graphics.drawLine(
-                                    (int)(pointA.getX() - minX),
-                                    (int)(pointA.getY() - minY),
-                                    (int)(pointB.getX() - minX),
-                                    (int)(pointB.getY() - minY));
+                        graphics.drawLine(
+                                (int) (pointA.getX() - minX),
+                                (int) (pointA.getY() - minY),
+                                (int) (pointB.getX() - minX),
+                                (int) (pointB.getY() - minY));
+                    }
                 }
             }
         }

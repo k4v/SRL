@@ -34,7 +34,7 @@ public class GeometricMomentsFeature extends IFeature
     @Override
     public void computeFeature(@Nullable BufferedImage sketchImage, @Nullable Sketch parsedSketch)
     {
-        System.out.println("Extracting Geometrix Moments feature from "+parsedSketch.getFileName());
+        System.out.println("Extracting Geometric Moments feature from "+parsedSketch.getFileName());
 
         this.pixelMatrix = CommonUtils.getBinaryArray_BinaryImage(sketchImage);
 
