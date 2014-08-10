@@ -1,17 +1,15 @@
 package org.k4rthik.srl.main;
 
-import javafx.util.Pair;
-import org.k4rthik.srl.dom.SketchXMLReader;
+import com.sun.istack.internal.Nullable;
+import org.k4rthik.srl.common.CommonUtils;
 import org.k4rthik.srl.dom.beans.Sketch;
 import org.k4rthik.srl.features.AngleCountZoningFeature;
 import org.k4rthik.srl.features.CosineTransformFeature;
 import org.k4rthik.srl.features.DarkLevelZoningFeature;
 import org.k4rthik.srl.features.GeometricMomentsFeature;
 import org.k4rthik.srl.features.IFeature;
-import org.k4rthik.srl.gui.ImageHandler;
 import org.k4rthik.srl.gui.SketchCanvas;
 import org.k4rthik.srl.weka.IClassifier;
-import weka.classifiers.Evaluation;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
@@ -19,8 +17,7 @@ import weka.core.Instances;
 import weka.core.converters.ArffSaver;
 import weka.core.converters.ConverterUtils.DataSource;
 
-import javax.imageio.ImageIO;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -42,10 +39,9 @@ import java.util.Scanner;
  * Author: Karthik
  * Date  : 7/10/2014.
  */
+@SuppressWarnings("unused, unchecked")
 public class TrainingHandler
 {
-    private static TrainingHandler INSTANCE = null;
-
     private boolean doFeatureExtract = true;
 
     // Feature Extraction classes
@@ -55,22 +51,13 @@ public class TrainingHandler
         DarkLevelZoningFeature.class,
         AngleCountZoningFeature.class));
 
-    // Weka classifier members
+    // Weka training model members
     Map<String, Integer> attributeNameMap = new HashMap<String, Integer>();
     FastVector attributeList = new FastVector();
     Instances trainingSet = null;
 
-    // Get singletone instance of Labeller
-    public static synchronized TrainingHandler getInstance() throws Exception
-    {
-        if(INSTANCE == null)
-            INSTANCE = new TrainingHandler();
-        // Return singleton instance
-        return INSTANCE;
-    }
 
-    // Private constructor for Labeller to make singleton class
-    private TrainingHandler() throws Exception
+    public TrainingHandler() throws Exception
     {
         // Add attributes corresponding to each feature extraction class
         for(Class featureClass : featureExtractionClasses)
@@ -107,14 +94,9 @@ public class TrainingHandler
         this.doFeatureExtract = doFeatureExtract;
     }
 
-    public Instances loadArffDataset(String arffLocation) throws Exception
-    {
-        return new DataSource(arffLocation).getDataSet();
-    }
-
     public void loadTrainingInstances(String arffLocation) throws Exception
     {
-        this.trainingSet = loadArffDataset(arffLocation);
+        this.trainingSet = new DataSource(arffLocation).getDataSet();
     }
 
     /**
@@ -129,9 +111,6 @@ public class TrainingHandler
         // For each sketch XML in base directory, get label as training data.
         // forceRelabel forces the application to relabel all sketch folders,
         // even if label already exists.
-
-        // Loads XML (text) file and computes points
-        SketchXMLReader xmlReader = new SketchXMLReader();
 
         try
         {
@@ -152,7 +131,7 @@ public class TrainingHandler
                     // Read XML files from the directory
                     if(charFile.toString().endsWith(".xml"))
                     {
-                        Pair<Image, Sketch> imageSketchPair = drawImageForXml(charFile, xmlReader);
+                        CommonUtils.Pair<Image, Sketch> imageSketchPair = CommonUtils.drawImageForXml(charFile);
                         // Add label with count to map
                         imageMap.put(imageSketchPair.getKey(), imageSketchPair.getValue());
                         filesLoaded++;
@@ -191,8 +170,10 @@ public class TrainingHandler
         {
             System.err.println("Error reading files in base directory: "+e.toString());
         }
+    }
 
-
+    public void saveTrainingSetArff(String toFile)
+    {
         if(doFeatureExtract)
         {
             // Save training set to ARFF file
@@ -201,8 +182,7 @@ public class TrainingHandler
             {
                 ArffSaver arffSaver = new ArffSaver();
                 arffSaver.setInstances(trainingSet);
-                String TRAINING_SET_SAVEFILE = "training.srl.arff";
-                arffSaver.setFile(new File(TRAINING_SET_SAVEFILE));
+                arffSaver.setFile(new File(toFile));
                 arffSaver.writeBatch();
             } catch (Exception e)
             {
@@ -237,29 +217,17 @@ public class TrainingHandler
         }
     }
 
-    private Pair<Image, Sketch> drawImageForXml(Path charFile, SketchXMLReader xmlReader) throws IOException
+    // Build a classifier with the trained instances and save a model file if required
+    public IClassifier buildClassifier(Class<? extends IClassifier> classifierClass, @Nullable String saveToModelFile) throws Exception
     {
-        // Load XML file into Sketch object
-        System.out.println("Reading file: " + charFile.toString());
-        Sketch xmlSketch = xmlReader.loadXML(new File(charFile.toString()));
-        xmlSketch.setFileName(charFile.toString());
+        if(classifierClass == null)
+        {
+            return null;
+        }
 
-        // Draw image from points in sketch
-        BufferedImage drawImage = ImageHandler.drawImage(xmlSketch);
-        ImageIO.write(drawImage, "png", new File(charFile+".png"));
+        IClassifier classifierInstance = classifierClass.newInstance();
+        classifierInstance.buildClassifierFromTrainingSet(this.trainingSet, saveToModelFile);
 
-        // Add image to grand map for feature extraction later
-        return new Pair<Image, Sketch>(drawImage, xmlSketch);
-    }
-
-    // Run classifier on the given test and training datasets
-    public void runClassifier(IClassifier classifierInstance, String testArffLocation) throws Exception
-    {
-        Instances testInstances = loadArffDataset(testArffLocation);
-        testInstances.setClassIndex(testInstances.numAttributes() - 1);
-        classifierInstance.setTrainingSet(this.trainingSet);
-        Evaluation evalModel = classifierInstance.evaluateModel(testInstances);
-
-        System.out.println(evalModel.toSummaryString("\n\nRESULTS:\n\n", false));
+        return classifierInstance;
     }
 }

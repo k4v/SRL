@@ -1,6 +1,14 @@
 package org.k4rthik.srl.common;
 
+import org.k4rthik.srl.dom.SketchXMLReader;
+import org.k4rthik.srl.dom.beans.Sketch;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  * Author: Karthik
@@ -10,6 +18,23 @@ import java.awt.image.BufferedImage;
 @SuppressWarnings("unused")
 public class CommonUtils
 {
+    public static Pair<Image, Sketch> drawImageForXml(Path charFile) throws IOException
+    {
+        SketchXMLReader xmlReader = new SketchXMLReader();
+
+        // Load XML file into Sketch object
+        System.out.println("Reading file: " + charFile.toString());
+        xmlReader.loadXML(new File(charFile.toString()));
+        Sketch xmlSketch = xmlReader.getXmlSketch();
+
+        // Draw image from points in sketch
+        BufferedImage drawImage = xmlReader.drawImage();
+        ImageIO.write(drawImage, "png", new File(charFile + ".png"));
+
+        // Add image to grand map for feature extraction later
+        return new Pair<Image, Sketch>(drawImage, xmlSketch);
+    }
+
     public static int[][] getBinaryArray_BinaryImage(BufferedImage bufferedImage)
     {
         int[][] pixelArr = new int[bufferedImage.getHeight(null)][];
@@ -72,6 +97,28 @@ public class CommonUtils
                 System.out.print(' ');
             }
             System.out.println();
+        }
+    }
+
+    public static class Pair<K,V>
+    {
+        K key;
+        V value;
+
+        public Pair(K k, V v)
+        {
+            this.key = k;
+            this.value = v;
+        }
+
+        public K getKey()
+        {
+            return key;
+        }
+
+        public V getValue()
+        {
+            return value;
         }
     }
 }

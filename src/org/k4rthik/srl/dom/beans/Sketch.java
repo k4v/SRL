@@ -80,6 +80,11 @@ public class Sketch
         xyBounds = new float[]{minX, maxX, minY, maxY};
     }
 
+    public int getPointCount()
+    {
+        return (points == null) ? 0 : points.size();
+    }
+
     public ArrayList<Stroke> getStrokes()
     {
         return strokes;
@@ -93,6 +98,11 @@ public class Sketch
         {
             strokeMap.put(stroke.getId(), stroke);
         }
+    }
+
+    public int getStrokeCount()
+    {
+        return (strokes == null) ? 0 : strokes.size();
     }
 
     public Point getPointById(String id)
@@ -118,6 +128,61 @@ public class Sketch
     public float[] getXYBounds()
     {
         return xyBounds;
+    }
+
+    public boolean isPointInStrokes(int startStrokeIndex, int endStrokeIndex, String pointId)
+    {
+        int strokeCount = strokes.size();
+
+        // Fixing possible bad values of given indices
+        if((startStrokeIndex < 0) || (startStrokeIndex >= strokeCount))
+        {
+            startStrokeIndex = 0;
+        }
+
+        if((endStrokeIndex < 0) || (endStrokeIndex < startStrokeIndex) || (endStrokeIndex >= strokeCount))
+        {
+            endStrokeIndex = strokeCount - 1;
+        }
+
+        for(Stroke stroke : strokes.subList(startStrokeIndex, endStrokeIndex))
+        {
+            if(stroke.containsPoint(pointId))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get a sketch object containing all the points in the original sketch
+     * but a subset of strokes defined by start and end indices
+     */
+    public Sketch getSubsketch(int startStrokeIndex, int endStrokeIndex)
+    {
+        Sketch subSketch = new Sketch();
+        subSketch.setPoints(this.getPoints());
+
+        int strokeCount = strokes.size();
+
+        // Fixing possible bad values of given indices
+        if((startStrokeIndex < 0) || (startStrokeIndex >= strokeCount)
+                || (endStrokeIndex < 0) || (endStrokeIndex < startStrokeIndex) || (endStrokeIndex >= strokeCount))
+        {
+            return null;
+        }
+
+        if(strokes != null)
+        {
+            ArrayList<Stroke> strokeSublist = new ArrayList<Stroke>(strokes.subList(startStrokeIndex, endStrokeIndex));
+            subSketch.setStrokes(strokeSublist);
+        }
+
+        subSketch.setId(this.id);
+        subSketch.setType(this.id);
+        subSketch.setFileName(this.fileName);
+
+        return subSketch;
     }
 
     @Override

@@ -1,8 +1,11 @@
 package org.k4rthik.srl.weka;
 
+import com.sun.istack.internal.Nullable;
 import weka.classifiers.Classifier;
-import weka.classifiers.Evaluation;
 import weka.core.Instances;
+
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 
 /**
  * Author: Karthik
@@ -13,17 +16,24 @@ public abstract class IClassifier
     Classifier classifierInstance;
     private Instances trainingInstances = null;
 
-    public void setTrainingSet(Instances trainingInstances) throws Exception
+    public void buildClassifierFromTrainingSet(Instances trainingInstances, @Nullable String toModelFile) throws Exception
     {
         this.trainingInstances = trainingInstances;
         this.trainingInstances.setClassIndex(trainingInstances.numAttributes() - 1);
         classifierInstance.buildClassifier(trainingInstances);
+
+        if(toModelFile != null)
+        {
+            // Save trained model to file
+            ObjectOutputStream modelOutputStream = new ObjectOutputStream(new FileOutputStream(toModelFile));
+            modelOutputStream.writeObject(classifierInstance);
+            modelOutputStream.flush();
+            modelOutputStream.close();
+        }
     }
 
-    public Evaluation evaluateModel(Instances testInstances) throws Exception
+    public void setTrainedClassifier(Classifier trainedClassifier)
     {
-        Evaluation evalModel = new Evaluation(this.trainingInstances);
-        evalModel.evaluateModel(classifierInstance, testInstances);
-        return evalModel;
+        this.classifierInstance = trainedClassifier;
     }
 }
