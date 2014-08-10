@@ -24,11 +24,10 @@ public class CommonUtils
 
         // Load XML file into Sketch object
         System.out.println("Reading file: " + charFile.toString());
-        xmlReader.loadXML(new File(charFile.toString()));
-        Sketch xmlSketch = xmlReader.getXmlSketch();
+        Sketch xmlSketch = xmlReader.xmlToSketch(new File(charFile.toString()));
 
         // Draw image from points in sketch
-        BufferedImage drawImage = xmlReader.drawImage();
+        BufferedImage drawImage = xmlReader.drawImage(xmlSketch);
         ImageIO.write(drawImage, "png", new File(charFile + ".png"));
 
         // Add image to grand map for feature extraction later

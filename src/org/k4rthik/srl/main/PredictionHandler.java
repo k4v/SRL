@@ -4,16 +4,21 @@ import org.k4rthik.srl.dom.SketchXMLReader;
 import org.k4rthik.srl.dom.beans.Sketch;
 import org.k4rthik.srl.weka.IClassifier;
 import weka.classifiers.Classifier;
-import weka.core.Instances;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -21,10 +26,9 @@ import java.util.Set;
  * Date  : 08/09/2014.
  */
 @SuppressWarnings("unused")
-public class PredictionHandler
+public class PredictionHandler extends AbstractLearningHandler
 {
     IClassifier trainedClassifier = null;
-    Instances testSet = null;
 
     // This is the list of words to which the classifier should stick
     // This is a simple non-learning modelof "context" to the entered
@@ -32,9 +36,9 @@ public class PredictionHandler
     List<String> labeDictionary;
 
     int minStrokesInCharacter = 1;
-    int maxStrokesInCharacter = 7;
+    int maxStrokesInCharacter = 2;
 
-    char unknownLabelCharacter = '?';
+    SketchXMLReader xmlReader;
 
     // Load a predictor from a given model using the given classifier
     public PredictionHandler(Class classifierClass, String classifierModelFile) throws Exception
@@ -46,6 +50,8 @@ public class PredictionHandler
         this.trainedClassifier = (IClassifier)classifierClass.newInstance();
         // This replaces the untrained Classifier with a trained Classifier object from the model file
         this.trainedClassifier.setTrainedClassifier(trainedClassifier);
+
+        xmlReader = new SketchXMLReader();
     }
 
     public void setWordlist(Collection<String> wordList)
@@ -69,18 +75,18 @@ public class PredictionHandler
                 throw new FileNotFoundException("No files found in test dataset folder");
             }
 
-            SketchXMLReader xmlReader = new SketchXMLReader();
-
             for(File xmlFile : fileList)
             {
-                if(xmlFile.toString().endsWith(".xml"))
+                if(xmlFile.isFile() && xmlFile.toString().endsWith(".xml"))
                 {
-                    // Load XML file into Sketch object
                     System.out.println("Reading file: " + xmlFile.toString());
-                    xmlReader.loadXML(xmlFile);
-                    Sketch xmlSketch = xmlReader.getXmlSketch();
 
+                    // Load XML file into Sketch object
+                    Sketch xmlSketch = xmlReader.xmlToSketch(xmlFile);
+
+                    // Find possible classes for sketch
                     Set<String> sketchLabels = classifySketch(xmlSketch);
+
                     System.out.println("\nClasses for "+xmlFile.toString()+": "+sketchLabels);
                 }
             }
@@ -109,10 +115,25 @@ public class PredictionHandler
         {
             // Subsketch is assumed to be 1 character.
             Sketch subSketch = testSketch.getSubsketch(0, i-1);
+            Sketch subSketchPlusOne = testSketch.getSubsketch(i, i);
+
+            // Check if next stroke is contained in or contained by this one. If so, skip till we get to a combination of both strokes
+            if(subSketchPlusOne != null)
+            {
+                float[] thisXYBounds = subSketch.getXYBounds();
+                float[] nextXYBounds = subSketchPlusOne.getXYBounds();
+                /*
+                if(
+                   (thisXYBounds[0] <= nextXYBounds[0] && thisXYBounds[1] >= nextXYBounds[1])
+                || (nextXYBounds[0] <= thisXYBounds[0] && nextXYBounds[1] >= thisXYBounds[1]))
+                {
+                    continue;
+                }*/
+            }
 
             Set<String> firstCharLabels = getCharSketchLabel(subSketch);
             // Classify the rest of the sketch (multiple characters, one at a time)
-            Set<String> remainingLabels = classifySketch(subSketch.getSubsketch(i, strokeCount-1));
+            Set<String> remainingLabels = classifySketch(testSketch.getSubsketch(i, strokeCount-1));
 
             // Get all possible labels for this sketch as sum of first character + remaining characters
             if(firstCharLabels.isEmpty())
@@ -138,9 +159,28 @@ public class PredictionHandler
         return possibleLabels;
     }
 
-    // Get classification for a sketch containing a single character
+    // Get classification for a sketch or subsketch containing a single character
     private Set<String> getCharSketchLabel(Sketch testSketch)
     {
-        return null;
+        Map<Image, Sketch> imageSketchMap = new HashMap<Image, Sketch>(1);
+        BufferedImage sketchImage = xmlReader.drawImage(testSketch);
+        try {
+            ImageIO.write(sketchImage, "png", new File(testSketch.getFileName() + ".png"));
+        } catch(IOException e)
+        {
+            /* Ah, frak it */
+        }
+        imageSketchMap.put(sketchImage, testSketch);
+        initDataset();
+        extractFeaturesForInstances(imageSketchMap, null);
+
+        // Dataset only contains 1 instance
+        double classLabel = trainedClassifier.classifyInstance(this.dataSet.firstInstance());
+
+        Set<String> labelInstances = new HashSet<String>(1);
+        String sketchLabel = (Double.isNaN(classLabel)) ? unknownLabelCharacter : this.dataSet.classAttribute().value((int)classLabel);
+        labelInstances.add(sketchLabel);
+
+        return labelInstances;
     }
 }

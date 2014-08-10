@@ -5,6 +5,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -66,18 +67,7 @@ public class Sketch
             pointMap.put(point.getId(), point);
         }
 
-        float minX = -1f, maxX = 0f;
-        float minY = -1f, maxY = 0f;
-
-        for(Point point : points)
-        {
-            minX = ((minX < 0) || (minX > point.getX())) ? point.getX() : minX;
-            maxX = (maxX < point.getX()) ? point.getX() : maxX;
-            minY = ((minY < 0) || (minY > point.getY())) ? point.getY() : minY;
-            maxY = (maxY < point.getY()) ? point.getY() : maxY;
-        }
-
-        xyBounds = new float[]{minX, maxX, minY, maxY};
+        xyBounds = computeXYBounds(this.points);
     }
 
     public int getPointCount()
@@ -130,28 +120,20 @@ public class Sketch
         return xyBounds;
     }
 
-    public boolean isPointInStrokes(int startStrokeIndex, int endStrokeIndex, String pointId)
+    private float[] computeXYBounds(List<Point> points)
     {
-        int strokeCount = strokes.size();
+        float minX = -1f, maxX = 0f;
+        float minY = -1f, maxY = 0f;
 
-        // Fixing possible bad values of given indices
-        if((startStrokeIndex < 0) || (startStrokeIndex >= strokeCount))
+        for(Point point : points)
         {
-            startStrokeIndex = 0;
+            minX = ((minX < 0) || (minX > point.getX())) ? point.getX() : minX;
+            maxX = (maxX < point.getX()) ? point.getX() : maxX;
+            minY = ((minY < 0) || (minY > point.getY())) ? point.getY() : minY;
+            maxY = (maxY < point.getY()) ? point.getY() : maxY;
         }
 
-        if((endStrokeIndex < 0) || (endStrokeIndex < startStrokeIndex) || (endStrokeIndex >= strokeCount))
-        {
-            endStrokeIndex = strokeCount - 1;
-        }
-
-        for(Stroke stroke : strokes.subList(startStrokeIndex, endStrokeIndex))
-        {
-            if(stroke.containsPoint(pointId))
-                return true;
-        }
-
-        return false;
+        return new float[]{minX, maxX, minY, maxY};
     }
 
     /**
@@ -161,8 +143,6 @@ public class Sketch
     public Sketch getSubsketch(int startStrokeIndex, int endStrokeIndex)
     {
         Sketch subSketch = new Sketch();
-        subSketch.setPoints(this.getPoints());
-
         int strokeCount = strokes.size();
 
         // Fixing possible bad values of given indices
@@ -174,13 +154,38 @@ public class Sketch
 
         if(strokes != null)
         {
-            ArrayList<Stroke> strokeSublist = new ArrayList<Stroke>(strokes.subList(startStrokeIndex, endStrokeIndex));
+            // Set subset of strokes for new sketch
+            ArrayList<Stroke> strokeSublist = new ArrayList<Stroke>(strokes.subList(startStrokeIndex, endStrokeIndex + 1));
             subSketch.setStrokes(strokeSublist);
+
+            // Set subset of points for new sketch
+            ArrayList<Point> pointList = new ArrayList<Point>();
+            for(Stroke stroke : strokeSublist)
+            {
+                if(stroke.getArgs() == null)
+                {
+                    continue;
+                }
+
+                for(Arg arg : stroke.getArgs())
+                {
+                    if(arg.getType().equals("point"))
+                    {
+                        pointList.add(getPointById(arg.getValue()));
+                    }
+                }
+            }
+
+            subSketch.setPoints(pointList);
         }
 
         subSketch.setId(this.id);
-        subSketch.setType(this.id);
-        subSketch.setFileName(this.fileName);
+        subSketch.setType(this.type);
+
+        // Set file name of sketch as a modification of original sketch's file name
+        String fileNameNoExt = this.fileName.substring(0, this.fileName.lastIndexOf("."));
+        subSketch.setFileName(fileNameNoExt+"_"+startStrokeIndex+"_"+endStrokeIndex
+                +this.fileName.substring(this.fileName.lastIndexOf(".")));
 
         return subSketch;
     }

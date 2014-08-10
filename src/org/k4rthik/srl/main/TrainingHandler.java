@@ -3,22 +3,12 @@ package org.k4rthik.srl.main;
 import com.sun.istack.internal.Nullable;
 import org.k4rthik.srl.common.CommonUtils;
 import org.k4rthik.srl.dom.beans.Sketch;
-import org.k4rthik.srl.features.AngleCountZoningFeature;
-import org.k4rthik.srl.features.CosineTransformFeature;
-import org.k4rthik.srl.features.DarkLevelZoningFeature;
-import org.k4rthik.srl.features.GeometricMomentsFeature;
-import org.k4rthik.srl.features.IFeature;
 import org.k4rthik.srl.gui.SketchCanvas;
 import org.k4rthik.srl.weka.IClassifier;
-import weka.core.Attribute;
-import weka.core.FastVector;
-import weka.core.Instance;
-import weka.core.Instances;
 import weka.core.converters.ArffSaver;
 import weka.core.converters.ConverterUtils.DataSource;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -27,11 +17,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -40,53 +26,12 @@ import java.util.Scanner;
  * Date  : 7/10/2014.
  */
 @SuppressWarnings("unused, unchecked")
-public class TrainingHandler
+public class TrainingHandler extends AbstractLearningHandler
 {
     private boolean doFeatureExtract = true;
 
-    // Feature Extraction classes
-    List<Class> featureExtractionClasses = new ArrayList<Class>(Arrays.asList(
-        CosineTransformFeature.class,
-        GeometricMomentsFeature.class,
-        DarkLevelZoningFeature.class,
-        AngleCountZoningFeature.class));
-
-    // Weka training model members
-    Map<String, Integer> attributeNameMap = new HashMap<String, Integer>();
-    FastVector attributeList = new FastVector();
-    Instances trainingSet = null;
-
-
     public TrainingHandler() throws Exception
     {
-        // Add attributes corresponding to each feature extraction class
-        for(Class featureClass : featureExtractionClasses)
-        {
-            ((IFeature)featureClass.newInstance()).setAttributes(attributeList);
-        }
-
-        // Add all characters as nominal attribute values
-        FastVector labelValues = new FastVector();
-        for(int i=(int)'A'; i<=(int)'Z'; i++)
-        {
-            labelValues.addElement((char) i + "");
-            labelValues.addElement((char) (i+32) + "");
-        }
-
-        // Class (label) attribute. Should be the last attribute added to list
-        attributeList.addElement(new Attribute("ClassAttribute", labelValues));
-
-        Enumeration attributeElements = attributeList.elements();
-        while(attributeElements.hasMoreElements())
-        {
-            Attribute currentAttribute = (Attribute)attributeElements.nextElement();
-            attributeNameMap.put(currentAttribute.name(), currentAttribute.index());
-        }
-
-        // Create new set of training instances of variable capacity
-        trainingSet = new Instances("SRL", attributeList, 100);
-        // Set class attribute as last attribute in list
-        trainingSet.setClassIndex(attributeList.size() - 1);
     }
 
     public void setDoFeatureExtract(boolean doFeatureExtract)
@@ -96,14 +41,12 @@ public class TrainingHandler
 
     public void loadTrainingInstances(String arffLocation) throws Exception
     {
-        this.trainingSet = new DataSource(arffLocation).getDataSet();
+        this.dataSet = new DataSource(arffLocation).getDataSet();
     }
 
     /**
-     * There's a reason this class is the GrandMaster:
-     *
      * This function does everything. First it labels
-     * training set files, then extract features from
+     * training set files, then extracts features from
      * each image read.
      */
     public void processTrainingSet(Path baseDir, boolean forceRelabel)
@@ -154,7 +97,8 @@ public class TrainingHandler
                         FileWriter fileWriter = new FileWriter(charDir.toString() + "/" + "label");
                         fileWriter.write(selectLabel);
                         fileWriter.close();
-                    } else {
+                    } else
+                    {
                         BufferedReader fileReader = new BufferedReader(new FileReader(charDir.toString() + "/" + "label"));
                         selectLabel = fileReader.readLine();
                     }
@@ -181,39 +125,13 @@ public class TrainingHandler
             try
             {
                 ArffSaver arffSaver = new ArffSaver();
-                arffSaver.setInstances(trainingSet);
+                arffSaver.setInstances(dataSet);
                 arffSaver.setFile(new File(toFile));
                 arffSaver.writeBatch();
             } catch (Exception e)
             {
-                System.err.println("Error writing training set to file: " + e.getMessage());
+                System.err.println("Error writing training set to file: " + e.toString());
             }
-        }
-    }
-
-    private void extractFeaturesForInstances(Map<Image, Sketch> imageMap, String imageLabel)
-    {
-        for(Map.Entry<Image, Sketch> imageEntry : imageMap.entrySet())
-        {
-            Instance trainingInstance = new Instance(attributeList.size());
-            trainingInstance.setDataset(trainingSet);
-
-            for(Class featureClass : featureExtractionClasses)
-            {
-                try
-                {
-                    IFeature featureExtractor = (IFeature)featureClass.newInstance();
-                    featureExtractor.computeFeature((BufferedImage)imageEntry.getKey(), imageEntry.getValue());
-                    featureExtractor.setAttributeValues(attributeList, attributeNameMap, trainingInstance);
-                }
-                catch(Exception e)
-                {
-                    System.err.println("Error extracting features for "+featureClass.getName()+": "+e.getMessage());
-                }
-            }
-
-            trainingInstance.setClassValue(imageLabel);
-            trainingSet.add(trainingInstance);
         }
     }
 
@@ -226,7 +144,7 @@ public class TrainingHandler
         }
 
         IClassifier classifierInstance = classifierClass.newInstance();
-        classifierInstance.buildClassifierFromTrainingSet(this.trainingSet, saveToModelFile);
+        classifierInstance.buildClassifierFromTrainingSet(this.dataSet, saveToModelFile);
 
         return classifierInstance;
     }
