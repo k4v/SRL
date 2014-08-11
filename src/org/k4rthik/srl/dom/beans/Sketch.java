@@ -125,12 +125,24 @@ public class Sketch
         float minX = -1f, maxX = 0f;
         float minY = -1f, maxY = 0f;
 
-        for(Point point : points)
+        if(strokes == null)
+            return new float[]{minX, maxX, minY, maxY};
+
+        for(Stroke stroke : strokes)
         {
-            minX = ((minX < 0) || (minX > point.getX())) ? point.getX() : minX;
-            maxX = (maxX < point.getX()) ? point.getX() : maxX;
-            minY = ((minY < 0) || (minY > point.getY())) ? point.getY() : minY;
-            maxY = (maxY < point.getY()) ? point.getY() : maxY;
+            if(stroke.getArgs() == null)
+                continue;
+            for(Arg arg : stroke.getArgs())
+            {
+                if(arg.getType().equals("point"))
+                {
+                    Point point = getPointById(arg.getValue());
+                    minX = ((minX < 0) || (minX > point.getX())) ? point.getX() : minX;
+                    maxX = (maxX < point.getX()) ? point.getX() : maxX;
+                    minY = ((minY < 0) || (minY > point.getY())) ? point.getY() : minY;
+                    maxY = (maxY < point.getY()) ? point.getY() : maxY;
+                }
+            }
         }
 
         return new float[]{minX, maxX, minY, maxY};

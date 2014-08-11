@@ -7,6 +7,7 @@ import weka.core.Instances;
 
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
+import java.util.Arrays;
 
 /**
  * Author: Karthik
@@ -42,18 +43,72 @@ public abstract class IClassifier
 
     // This function is to be used during testing/prediction.
     // It classifes a given test instance using the trained model
-    public double classifyInstance(Instance testInstance)
+    public double[] classifyInstance(Instance testInstance, boolean getDistribution)
     {
-        double classLabel = Instance.missingValue();
+        double[] classLabels = new double[]{Instance.missingValue()};
 
         try
         {
-            classLabel = classifierInstance.classifyInstance(testInstance);
+            if(getDistribution)
+            {
+                classLabels = classifierInstance.distributionForInstance(testInstance);
+                return getHighestValues(classLabels, 2, 0.1f);
+            }
+            else
+            {
+                classLabels = new double[]{classifierInstance.classifyInstance(testInstance)};
+            }
         } catch(Exception e)
         {
             System.err.println("Error classifying test instance: "+e.toString());
         }
 
-        return classLabel;
+        return classLabels;
+    }
+
+    private double[] getHighestValues(double[] doubleArr, int n, double cutoff)
+    {
+        int validValues = 0;
+        for (double elem : doubleArr)
+        {
+            if (elem >= cutoff)
+            {
+                validValues += 1;
+            }
+        }
+
+        if(validValues == 0)
+        {
+            return new double[]{Instance.missingValue()};
+        }
+
+
+        double[] highestValues = new double[Math.min(validValues, n)];
+        Arrays.fill(highestValues, -1f);
+
+        int currIndex = 0;
+        int minIndex = 0;
+        for(int i=0; i<doubleArr.length; i++)
+        {
+            if(highestValues[currIndex] < 0)
+            {
+                highestValues[currIndex] = i;
+            }
+            else if(doubleArr[(int)highestValues[minIndex]] < doubleArr[i])
+            {
+                highestValues[minIndex] = i;
+            }
+
+            currIndex = (currIndex+1)%highestValues.length;
+            for(int j=0; j<highestValues.length; j++)
+            {
+                if((highestValues[j] >= 0) && (doubleArr[(int)highestValues[j]] < doubleArr[(int)highestValues[minIndex]]))
+                {
+                    minIndex = j;
+                }
+            }
+        }
+
+        return highestValues;
     }
 }

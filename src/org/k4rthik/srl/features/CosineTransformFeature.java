@@ -92,24 +92,31 @@ public class CosineTransformFeature  extends IFeature
             fitGrid[y] = new int[gridDimensions.width];
             for (int x=0; x<fitGrid[y].length; x++)
             {
-                fitGrid[y][x] = 0;
-
-                // Find pixels in actual array between which this location in fit array is to be approximated
-                int yStart = (int)Math.floor(y*ySkip);
-                int yEnd = (ySkip <= 1) ? yStart : (yStart + ((int)ySkip));
-                int xStart = (int)Math.floor(x*xSkip);
-                int xEnd = (xSkip < 1) ? xStart : (xStart + ((int)xSkip));
-
-                // Get the pixels with the computed bounds and get the average black value
-                for(int yCoord = yStart; yCoord<=yEnd; yCoord++)
+                try
                 {
-                    for (int xCoord = xStart; xCoord <= xEnd; xCoord++)
-                    {
-                        fitGrid[y][x] += pixelArr[yCoord][xCoord];
-                    }
-                }
+                    fitGrid[y][x] = 0;
 
-                fitGrid[y][x] = (int)Math.round(fitGrid[y][x]/(Math.ceil(ySkip)*Math.ceil(xSkip)));
+                    // Find pixels in actual array between which this location in fit array is to be approximated
+                    int yStart = (int) Math.floor(y * ySkip);
+                    int yEnd = (ySkip <= 1) ? yStart : (yStart + ((int) ySkip));
+                    int xStart = (int) Math.floor(x * xSkip);
+                    int xEnd = (xSkip < 1) ? xStart : (xStart + ((int) xSkip));
+
+                    // Get the pixels with the computed bounds and get the average black value
+                    for (int yCoord = yStart; yCoord <= Math.min(yEnd, pixelArr.length -1); yCoord++)
+                    {
+                        for (int xCoord = xStart; xCoord <= Math.min(xEnd, pixelArr[yCoord].length -1); xCoord++)
+                        {
+                            fitGrid[y][x] += pixelArr[yCoord][xCoord];
+                        }
+                    }
+
+                    fitGrid[y][x] = (int) Math.round(fitGrid[y][x] / (Math.ceil(ySkip) * Math.ceil(xSkip)));
+                } catch(Exception e)
+                {
+                    System.err.println("Error computing cosine transform feature for ("+y+","+x+")");
+                    e.printStackTrace(System.err);
+                }
             }
         }
 

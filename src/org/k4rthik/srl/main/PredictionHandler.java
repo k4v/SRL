@@ -1,12 +1,13 @@
 package org.k4rthik.srl.main;
 
+import org.apache.commons.lang3.StringUtils;
 import org.k4rthik.srl.dom.SketchXMLReader;
 import org.k4rthik.srl.dom.beans.Sketch;
 import org.k4rthik.srl.weka.IClassifier;
 import weka.classifiers.Classifier;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,7 +65,7 @@ public class PredictionHandler extends AbstractLearningHandler
     // Prediction handler works assuming that test set could be words
     public void classifyInstances(String testSetDir) throws Exception
     {
-        Set<String> possibleLabels = new HashSet<String>();
+        this.labeDictionary = new ArrayList<String>(Arrays.asList(new String[]{"MAIN", "CTCP", "BOCP"}));
 
         try
         {
@@ -85,9 +87,25 @@ public class PredictionHandler extends AbstractLearningHandler
                     Sketch xmlSketch = xmlReader.xmlToSketch(xmlFile);
 
                     // Find possible classes for sketch
-                    Set<String> sketchLabels = classifySketch(xmlSketch);
+                    Set<String> possibleLabels = classifySketch(xmlSketch);
+                    Set<String> correctedLabels = new HashSet<String>(possibleLabels);
 
-                    System.out.println("\nClasses for "+xmlFile.toString()+": "+sketchLabels);
+                    System.out.println(possibleLabels);
+
+                    for(String sketchLabel : possibleLabels)
+                    {
+                        for(String contextWord : this.labeDictionary)
+                        {
+                            if(StringUtils.getLevenshteinDistance(sketchLabel, contextWord) <= contextWord.length()/2)
+                            {
+                                correctedLabels.add(contextWord);
+                            }
+                        }
+                    }
+
+                    correctedLabels.retainAll(labeDictionary);
+
+                    System.out.println("\nClasses for "+xmlFile.toString()+": "+correctedLabels);
                 }
             }
         } catch (Exception e)
@@ -122,13 +140,12 @@ public class PredictionHandler extends AbstractLearningHandler
             {
                 float[] thisXYBounds = subSketch.getXYBounds();
                 float[] nextXYBounds = subSketchPlusOne.getXYBounds();
-                /*
                 if(
                    (thisXYBounds[0] <= nextXYBounds[0] && thisXYBounds[1] >= nextXYBounds[1])
                 || (nextXYBounds[0] <= thisXYBounds[0] && nextXYBounds[1] >= thisXYBounds[1]))
                 {
                     continue;
-                }*/
+                }
             }
 
             Set<String> firstCharLabels = getCharSketchLabel(subSketch);
@@ -150,7 +167,7 @@ public class PredictionHandler extends AbstractLearningHandler
                 {
                     for(String remainingChars : remainingLabels)
                     {
-                        possibleLabels.add(firstChar+remainingChars);
+                        possibleLabels.add((firstChar+remainingChars).toUpperCase());
                     }
                 }
             }
@@ -175,11 +192,14 @@ public class PredictionHandler extends AbstractLearningHandler
         extractFeaturesForInstances(imageSketchMap, null);
 
         // Dataset only contains 1 instance
-        double classLabel = trainedClassifier.classifyInstance(this.dataSet.firstInstance());
+        double[] classLabels = trainedClassifier.classifyInstance(this.dataSet.firstInstance(), true);
 
-        Set<String> labelInstances = new HashSet<String>(1);
-        String sketchLabel = (Double.isNaN(classLabel)) ? unknownLabelCharacter : this.dataSet.classAttribute().value((int)classLabel);
-        labelInstances.add(sketchLabel);
+        Set<String> labelInstances = new HashSet<String>(classLabels.length);
+        for(double classLabel : classLabels)
+        {
+            String sketchLabel = (Double.isNaN(classLabel)) ? unknownLabelCharacter : this.dataSet.classAttribute().value((int) classLabel);
+            labelInstances.add(sketchLabel);
+        }
 
         return labelInstances;
     }

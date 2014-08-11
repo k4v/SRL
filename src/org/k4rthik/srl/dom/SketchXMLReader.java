@@ -39,26 +39,15 @@ public class SketchXMLReader
     // Draw 2D image using all points in sketch
     public BufferedImage drawImage(Sketch sketchObject)
     {
-        List<Point> pointList = sketchObject.getPoints();
-        float maxX = 0f, minX = -1.0f, maxY = 0f, minY = -1.0f;
-        if(pointList != null)
-        {
-            for (Point charPoint : pointList)
-            {
-                maxX = maxX < charPoint.getX() ? charPoint.getX() : maxX;
-                minX = ((minX < 0) || (minX > charPoint.getX())) ? charPoint.getX() : minX;
-                maxY = maxY < charPoint.getY() ? charPoint.getY() : maxY;
-                minY = ((minY < 0) || (minY > charPoint.getY())) ? charPoint.getY() : minY;
-            }
-        }
+        float[] xyBounds = sketchObject.getXYBounds();
 
-        BufferedImage drawImage = new BufferedImage((int)(maxX - minX),
-                (int)(maxY - minY),
+        BufferedImage drawImage = new BufferedImage((int)(xyBounds[1] - xyBounds[0]),
+                (int)(xyBounds[3]- xyBounds[2]),
                 BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = drawImage.createGraphics();
 
         graphics.setPaint(new Color(255, 255, 255));
-        graphics.fillRect(0, 0, (int)(maxX - minX), (int)(maxY - minY));
+        graphics.fillRect(0, 0, (int)(xyBounds[1] - xyBounds[0]), (int)(xyBounds[3]- xyBounds[2]));
 
         // Set drawing color to black
         graphics.setColor(new Color(255 << 24));
@@ -78,10 +67,10 @@ public class SketchXMLReader
                         Point pointB = sketchObject.getPointById(args.get(i + 1).getValue());
 
                         graphics.drawLine(
-                                (int) (pointA.getX() - minX),
-                                (int) (pointA.getY() - minY),
-                                (int) (pointB.getX() - minX),
-                                (int) (pointB.getY() - minY));
+                                (int) (pointA.getX() - xyBounds[0]),
+                                (int) (pointA.getY() - xyBounds[2]),
+                                (int) (pointB.getX() - xyBounds[0]),
+                                (int) (pointB.getY() - xyBounds[2]));
                     }
                 }
             }

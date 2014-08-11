@@ -44,6 +44,16 @@ public class Main
 
                 System.out.println("Training complete with " + (args.length - 2) + " datasets");
             }
+            // Load training instances, train and save model
+            else if(args[0].equals("L"))
+            {
+                String testDataLocation = args[1];
+                String modelFileLocation = args[2];
+                Class classifierClass = Class.forName("org.k4rthik.srl.weka."+args[3]);
+
+                PredictionHandler predictionHandler = new PredictionHandler(classifierClass, modelFileLocation);
+                predictionHandler.classifyInstances(testDataLocation);
+            }
             // Start the program in prediction mode
             else if(args[0].equals("P"))
             {
@@ -67,7 +77,7 @@ public class Main
 
     private static void printUsage()
     {
-        System.out.println("Usage: java -jar -Xmx2048\n\t" +
+        System.out.println("Usage: java -jar -Xmx4096m\n\t" +
                 "  [T <list of training dataset folders> <classifier class name>]\n\t" +
                 "| [P <test dataset folder> <model file> <classifier class name>]");
     }

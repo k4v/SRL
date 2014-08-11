@@ -101,7 +101,7 @@ public class AngleCountZoningFeature extends IFeature
                     angleZone = 0;
                 else
                 {
-                   angleZone = (int)((strokeAngle+errorInterval)/errorInterval)/2;
+                   angleZone = (int)(((strokeAngle+errorInterval)/errorInterval)/2);
                 }
 
                 angleCounts[zoneA][angleZone] += 1;
